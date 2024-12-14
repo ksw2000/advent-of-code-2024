@@ -64,7 +64,7 @@ func TestDay9Part1(t *testing.T) {
 	fmt.Println(checksum)
 }
 
-func TestDay9Part2(t *testing.T) {
+func TestDay9Part2LinkedList(t *testing.T) {
 	f, err := os.Open("data/day9.txt")
 	if err != nil {
 		panic(err)
@@ -149,5 +149,61 @@ func TestDay9Part2(t *testing.T) {
 	}
 
 	fmt.Printf("%.3f ms\n", float64(time.Since(start).Microseconds())*0.001)
-	fmt.Println(checksum)
+	fmt.Println("checksum =", checksum)
+}
+
+func TestDay9Part2(t *testing.T) {
+	f, err := os.Open("data/day9.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	// f := strings.NewReader(day9Example)
+
+	start := time.Now()
+
+	type entry struct {
+		offset int
+		length int
+	}
+
+	var n byte
+	var round bool
+	data := []entry{}
+	free := []entry{}
+	offset := 0
+	for x, _ := fmt.Fscanf(f, "%c", &n); x > 0; x, _ = fmt.Fscanf(f, "%c", &n) {
+		e := entry{
+			offset: offset,
+			length: int(n - '0'),
+		}
+
+		if !round {
+			data = append(data, e)
+		} else {
+			free = append(free, e)
+		}
+
+		offset += e.length
+		round = !round
+	}
+
+	checksum := 0
+
+	for i := len(data) - 1; i >= 0; i-- {
+		for j := 0; j < len(free) && free[j].offset < data[i].offset; j++ {
+			if free[j].length >= data[i].length {
+				// move data
+				data[i].offset = free[j].offset
+				free[j].length -= data[i].length
+				free[j].offset += data[i].length
+				break
+			}
+		}
+		checksum += i * (data[i].offset*2 + data[i].length - 1) * data[i].length / 2
+	}
+
+	fmt.Printf("%.3f ms\n", float64(time.Since(start).Microseconds())*0.001)
+	fmt.Println("checksum =", checksum)
 }
